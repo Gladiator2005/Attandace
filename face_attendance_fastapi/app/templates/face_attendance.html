@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Face Attendance – AntiGrav Access{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📸 Face Attendance</h1>
+        <p class="subtitle">Scan your face to mark attendance</p>
+    </div>
+</div>
+
+<div class="face-attendance-grid">
+    <!-- Today's Schedule -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📅 Today's Schedule</h3>
+        </div>
+        <div id="todaySchedule" class="card-body">
+            <div class="schedule-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+    </div>
+
+    <!-- Current Class -->
+    <div class="card highlight-card">
+        <div class="card-header">
+            <h3>🎯 Current Class</h3>
+        </div>
+        <div id="currentClass" class="card-body">
+            <div class="schedule-loading"><i class="fas fa-spinner fa-spin"></i> Detecting...</div>
+        </div>
+    </div>
+
+    <!-- Face Scan Action -->
+    <div class="card" id="scanCard">
+        <div class="card-header">
+            <h3>✅ Mark Attendance</h3>
+        </div>
+        <div class="card-body" style="text-align:center;padding:32px;">
+            <div id="scanStatus">
+                <select id="manualSubject" style="margin-bottom:16px;width:100%;display:none;">
+                    <option value="">— Select Subject Manually —</option>
+                </select>
+                <p id="autoSubjectLabel" style="color:var(--text-secondary);margin-bottom:16px;"></p>
+                <button id="scanBtn" class="btn btn-primary btn-lg" onclick="scanFace()" disabled>
+                    <i class="fas fa-camera"></i> Scan Face & Mark Present
+                </button>
+                <div id="scanResult" style="margin-top:16px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentSubjectId = null;
+
+    async function loadTodaySchedule() {
+        const el = document.getElementById('todaySchedule');
+        try {
+            const res = await fetch('/api/schedule/my-today');
+            const data = await res.json();
+            if (!data.length) { el.innerHTML = '<p class="empty-state">No classes scheduled today</p>'; return; }
+            let html = '<div class="today-classes">';
+            data.forEach(c => {
+                html += `<div class="today-class-item" data-id="${c.subject_id}">
+                <div class="time-badge">${c.start_time} – ${c.end_time}</div>
+                <div><strong>${c.subject_code}</strong> – ${c.subject_name}</div>
+                ${c.room ? `<div class="room-badge"><i class="fas fa-door-open"></i> ${c.room}</div>` : ''}
+            </div>`;
+            });
+            html += '</div>';
+            el.innerHTML = html;
+
+            // Also populate manual selector
+            const sel = document.getElementById('manualSubject');
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.subject_id;
+                opt.textContent = `${c.subject_code} – ${c.subject_name}`;
+                sel.appendChild(opt);
+            });
+        } catch (e) { el.innerHTML = '<p>No schedule data available</p>'; }
+    }
+
+    async function detectCurrentClass() {
+        const el = document.getElementById('currentClass');
+        const btn = document.getElementById('scanBtn');
+        const label = document.getElementById('autoSubjectLabel');
+        const manual = document.getElementById('manualSubject');
+        try {
+            const res = await fetch('/api/schedule/my-current');
+            const data = await res.json();
+            if (data.current_subject) {
+                currentSubjectId = data.current_subject.id;
+                el.innerHTML = `<div class="current-class-display">
+                <div class="subject-code-big">${data.current_subject.code}</div>
+                <div class="subject-name-big">${data.current_subject.name}</div>
+                <div class="status-badge status-active"><i class="fas fa-circle"></i> In Session</div>
+            </div>`;
+                label.textContent = `Auto-detected: ${data.current_subject.code} – ${data.current_subject.name}`;
+                btn.disabled = false;
+            } else {
+                el.innerHTML = `<div class="empty-state"><i class="fas fa-clock" style="font-size:36px;opacity:0.3;display:block;margin-bottom:8px;"></i><p>No class right now</p><p style="font-size:13px;color:var(--text-secondary);">Select a subject manually below</p></div>`;
+                label.textContent = 'No class detected. Please select manually:';
+                manual.style.display = 'block';
+                manual.onchange = () => { currentSubjectId = parseInt(manual.value); btn.disabled = !manual.value; };
+            }
+        } catch (e) { el.innerHTML = '<p>Could not detect class</p>'; manual.style.display = 'block'; }
+    }
+
+    async function scanFace() {
+        const btn = document.getElementById('scanBtn');
+        const result = document.getElementById('scanResult');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+        result.innerHTML = '';
+
+        try {
+            const body = currentSubjectId ? { subject_id: currentSubjectId } : {};
+            const res = await fetch('/api/subjects/face-scan', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                result.innerHTML = `<div class="scan-success"><i class="fas fa-check-circle" style="font-size:48px;color:#10b981;"></i><h3 style="color:#10b981;">Attendance Marked!</h3><p>${data.subject_code} – ${data.subject_name}</p><p>Date: ${data.date}</p></div>`;
+                btn.innerHTML = '<i class="fas fa-check"></i> Done!';
+                btn.style.background = '#10b981';
+                showToast('Face verified! Attendance marked.', 'success');
+            } else {
+                result.innerHTML = `<div class="scan-error"><i class="fas fa-exclamation-triangle" style="font-size:36px;color:#ef4444;"></i><p style="color:#ef4444;">${data.detail || 'Scan failed'}</p></div>`;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-camera"></i> Retry';
+                showToast(data.detail || 'Scan failed', 'error');
+            }
+        } catch (e) {
+            result.innerHTML = '<p class="text-danger">Network error</p>';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-camera"></i> Retry';
+        }
+    }
+
+    loadTodaySchedule();
+    detectCurrentClass();
+</script>
+{% endblock %}

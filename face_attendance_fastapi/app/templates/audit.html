@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Audit Log – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔍 Admin Audit Log</h1>
+    <p>Full trail of every admin action — who changed what and when</p>
+</div>
+
+<div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;">
+        <select class="form-input" id="audit-action" style="max-width:220px;">
+            <option value="">All Actions</option>
+            <option value="Resolve Dispute">Resolve Dispute</option>
+            <option value="Approve Leave">Approve Leave</option>
+            <option value="Reject Leave">Reject Leave</option>
+            <option value="User Created">User Created</option>
+            <option value="User Deleted">User Deleted</option>
+            <option value="Session Activated">Session Activated</option>
+            <option value="Admin Override">Admin Override</option>
+            <option value="Login">Login</option>
+        </select>
+        <input type="number" class="form-input" id="audit-actor" placeholder="Actor ID (optional)"
+            style="max-width:180px;">
+        <button class="btn btn-primary btn-sm" onclick="loadAudit(0)"><i class="fas fa-search"></i> Filter</button>
+        <span id="audit-total" style="margin-left:auto;color:var(--text-muted);font-size:13px;"></span>
+    </div>
+    <div id="audit-table">
+        <p style="text-align:center;color:var(--text-muted);">Loading...</p>
+    </div>
+    <div id="audit-pagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px;"></div>
+</div>
+
+<script>
+    let auditSkip = 0;
+    const LIMIT = 25;
+
+    async function loadAudit(skip = 0) {
+        auditSkip = skip;
+        const action = document.getElementById('audit-action').value;
+        const actorId = document.getElementById('audit-actor').value;
+        let url = `/api/audit/?skip=${skip}&limit=${LIMIT}`;
+        if (action) url += `&action=${encodeURIComponent(action)}`;
+        if (actorId) url += `&actor_id=${actorId}`;
+        try {
+            const res = await fetch(url, { credentials: 'same-origin' });
+            const data = await res.json();
+            document.getElementById('audit-total').textContent = `${data.total} total records`;
+            if (!data.items.length) {
+                document.getElementById('audit-table').innerHTML =
+                    '<div style="text-align:center;padding:40px;color:var(--text-muted);">No audit records found</div>';
+                return;
+            }
+            document.getElementById('audit-table').innerHTML = `
+            <table>
+                <thead><tr>
+                    <th>Time</th><th>Action</th><th>Actor</th>
+                    <th>Target</th><th>Description</th><th>IP</th>
+                </tr></thead>
+                <tbody>${data.items.map(a => `
+                    <tr>
+                        <td style="font-size:12px;white-space:nowrap;">${new Date(a.created_at).toLocaleString()}</td>
+                        <td><span class="notif-type warning" style="font-size:11px;">${a.action}</span></td>
+                        <td>${a.actor_email || '–'}</td>
+                        <td>${a.target_type || '–'} ${a.target_id ? '#' + a.target_id : ''}</td>
+                        <td style="font-size:13px;max-width:250px;">${a.description || '–'}</td>
+                        <td style="font-size:12px;color:var(--text-muted);">${a.ip_address || '–'}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+
+            // Pagination
+            const totalPages = Math.ceil(data.total / LIMIT);
+            const curPage = Math.floor(skip / LIMIT);
+            let pgHtml = '';
+            for (let p = 0; p < totalPages; p++) {
+                pgHtml += `<button class="btn btn-sm ${p === curPage ? 'btn-primary' : 'btn-secondary'}" onclick="loadAudit(${p * LIMIT})">${p + 1}</button>`;
+            }
+            document.getElementById('audit-pagination').innerHTML = pgHtml;
+        } catch (e) { console.error(e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => loadAudit(0));
+</script>
+{% endblock %}

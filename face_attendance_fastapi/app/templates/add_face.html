@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Add Face Data – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Add Face Data</h1>
+    <p>Register your face for the automated attendance system.</p>
+</div>
+
+<div class="face-layout">
+    <div class="guidelines-card">
+        <h3>Guidelines for a good photo</h3>
+        <p class="guidelines-subtitle">Follow these rules to ensure successful recognition</p>
+
+        <div class="guideline-item">
+            <div class="check-icon"><i class="fas fa-check"></i></div>
+            <div>
+                <h4>Good Lighting</h4>
+                <p>Ensure your face is well-lit and clearly visible without harsh shadows.</p>
+            </div>
+        </div>
+        <div class="guideline-item">
+            <div class="check-icon"><i class="fas fa-check"></i></div>
+            <div>
+                <h4>Face Forward</h4>
+                <p>Look directly at the camera with a neutral expression.</p>
+            </div>
+        </div>
+        <div class="guideline-item">
+            <div class="check-icon"><i class="fas fa-check"></i></div>
+            <div>
+                <h4>Clear Background</h4>
+                <p>A plain, light-colored background works best.</p>
+            </div>
+        </div>
+        <div class="guideline-item warning">
+            <div class="check-icon"><i class="fas fa-exclamation"></i></div>
+            <div>
+                <h4>Remove Accessories</h4>
+                <p>Please remove sunglasses, hats, or masks that obscure your facial features.</p>
+            </div>
+        </div>
+
+        <div class="privacy-note">
+            <i class="fas fa-user-shield"></i>
+            <div>
+                <h4>Privacy Note</h4>
+                <p>Your photo is converted into a mathematical representation (encoding) and the original image is not
+                    permanently stored. This data is only used for attendance verification.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="upload-card">
+        <h3>Upload Photo</h3>
+
+        <div class="upload-circle" id="upload-circle" onclick="document.getElementById('face-input').click()">
+            <i class="fas fa-image"></i>
+            <span>Select an image</span>
+            <span style="font-size:0.72rem; color:var(--text-muted);">JPG or PNG, max 5MB</span>
+        </div>
+        <input type="file" id="face-input" accept="image/jpeg,image/png" onchange="previewFace(this)"
+            style="display:none;">
+
+        <div class="upload-actions">
+            <button class="btn btn-secondary" onclick="document.getElementById('face-input').click()">
+                <i class="fas fa-upload"></i> Upload
+            </button>
+            <button class="btn btn-primary" id="save-face-btn" onclick="submitFaceUpload()" disabled>
+                <i class="fas fa-check"></i> Save Face Data
+            </button>
+        </div>
+
+        <div id="face-result" style="margin-top:20px;"></div>
+    </div>
+</div>
+{% endblock %}

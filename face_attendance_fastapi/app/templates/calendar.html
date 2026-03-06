@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Attendance Calendar – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📅 Attendance Calendar</h1>
+    <p>Visual month-by-month attendance view</p>
+</div>
+
+<div class="card" style="max-width:900px;">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;">
+        <select class="form-input" id="cal-subject" style="max-width:280px;">
+            <option value="">Select Subject</option>
+        </select>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">‹ Prev</button>
+            <span id="cal-month-label" style="font-weight:700;font-size:16px;min-width:140px;text-align:center;"></span>
+            <button class="btn btn-secondary btn-sm" onclick="changeMonth(1)">Next ›</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadCalendar()"><i class="fas fa-sync"></i> Load</button>
+    </div>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:13px;">
+        <span><span class="cal-dot present"></span> Present</span>
+        <span><span class="cal-dot absent"></span> Absent</span>
+        <span><span class="cal-dot disputed"></span> Disputed</span>
+        <span><span class="cal-dot leave"></span> Leave / OD</span>
+        <span><span class="cal-dot pending"></span> Pending</span>
+    </div>
+
+    <div id="calendar-grid"></div>
+</div>
+
+<style>
+    .cal-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 4px;
+        vertical-align: middle;
+    }
+
+    .cal-dot.present {
+        background: #22c55e;
+    }
+
+    .cal-dot.absent {
+        background: #ef4444;
+    }
+
+    .cal-dot.disputed {
+        background: #f59e0b;
+    }
+
+    .cal-dot.leave {
+        background: #3b82f6;
+    }
+
+    .cal-dot.pending {
+        background: #6b7280;
+    }
+
+    .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+    }
+
+    .cal-header-cell {
+        text-align: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        padding: 4px;
+    }
+
+    .cal-day {
+        aspect-ratio: 1;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        cursor: default;
+        transition: transform 0.15s;
+    }
+
+    .cal-day:hover {
+        transform: scale(1.08);
+    }
+
+    .cal-day.present {
+        background: rgba(34, 197, 94, 0.15);
+        border-color: #22c55e;
+        color: #22c55e;
+    }
+
+    .cal-day.absent {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+
+    .cal-day.disputed {
+        background: rgba(245, 158, 11, 0.15);
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+
+    .cal-day.leave {
+        background: rgba(59, 130, 246, 0.15);
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+
+    .cal-day.pending {
+        background: rgba(107, 114, 128, 0.15);
+        border-color: #6b7280;
+        color: #6b7280;
+    }
+
+    .cal-day.empty {
+        background: transparent;
+        border-color: transparent;
+    }
+
+    .cal-day.today {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
+</style>
+
+<script>
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
+
+    function updateLabel() {
+        const d = new Date(currentYear, currentMonth - 1, 1);
+        document.getElementById('cal-month-label').textContent =
+            d.toLocaleString('default', { month: 'long' }) + ' ' + currentYear;
+    }
+
+    function changeMonth(dir) {
+        currentMonth += dir;
+        if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+        if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+        updateLabel();
+        loadCalendar();
+    }
+
+    async function loadSubjects() {
+        try {
+            const path = '{{ user.role.value }}' === 'Student' ? '/api/subjects/my-subjects' : '/api/subjects/';
+            const data = await fetch(path, { credentials: 'same-origin' }).then(r => r.json());
+            const sel = document.getElementById('cal-subject');
+            (Array.isArray(data) ? data : data.items || []).forEach(s => {
+                const o = document.createElement('option');
+                o.value = s.id;
+                o.textContent = `${s.code} – ${s.name}`;
+                sel.appendChild(o);
+            });
+            if (sel.options.length > 1) { sel.selectedIndex = 1; loadCalendar(); }
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadCalendar() {
+        const subjectId = document.getElementById('cal-subject').value;
+        if (!subjectId) return;
+        const container = document.getElementById('calendar-grid');
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);">Loading...</p>';
+        try {
+            const data = await fetch(`/api/calendar/${subjectId}?month=${currentMonth}&year=${currentYear}`, {
+                credentials: 'same-origin'
+            }).then(r => r.json());
+
+            // Build day map
+            const dayMap = {};
+            (data.days || []).forEach(d => { dayMap[d.date] = d.status; });
+
+            // Build calendar
+            const firstDay = new Date(currentYear, currentMonth - 1, 1);
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
+
+            let html = '<div class="cal-grid">';
+            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+                html += `<div class="cal-header-cell">${d}</div>`;
+            });
+
+            const today = new Date().toISOString().split('T')[0];
+            for (let i = 0; i < startDow; i++) html += '<div class="cal-day empty"></div>';
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const status = dayMap[dateStr] || '';
+                const isToday = dateStr === today ? ' today' : '';
+                html += `<div class="cal-day ${status}${isToday}" title="${dateStr}: ${status || 'no class'}">${day}</div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        } catch (e) { container.innerHTML = `<p style="color:var(--danger);">Error loading calendar</p>`; }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { updateLabel(); loadSubjects(); });
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/attendance
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY:-development_secret_key}
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --reload
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=attendance
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: .
+    command: celery -A app.workers worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/attendance
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:

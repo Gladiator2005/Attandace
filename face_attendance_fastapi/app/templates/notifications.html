@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Notifications – AntiGrav Access{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🔔 Notifications</h1>
+        <p class="subtitle">Attendance alerts and updates</p>
+    </div>
+    <button class="btn btn-secondary" onclick="markAllRead()"><i class="fas fa-check-double"></i> Mark All Read</button>
+</div>
+
+<div id="notifList" class="notifications-list">
+    <div class="schedule-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+</div>
+
+<script>
+    async function loadNotifications() {
+        const list = document.getElementById('notifList');
+        try {
+            const res = await fetch('/api/notifications/');
+            const data = await res.json();
+            if (!data.notifications.length) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash" style="font-size:48px;opacity:0.3;margin-bottom:16px;display:block;"></i><p>No notifications</p></div>';
+                return;
+            }
+            let html = '';
+            data.notifications.forEach(n => {
+                const typeIcons = { 'Face Only': 'fa-camera', 'Faculty Only': 'fa-chalkboard-teacher', 'Absent': 'fa-times-circle', 'Resolved': 'fa-check-circle' };
+                const typeColors = { 'Face Only': '#f59e0b', 'Faculty Only': '#8b5cf6', 'Absent': '#ef4444', 'Resolved': '#10b981' };
+                const icon = typeIcons[n.type] || 'fa-bell';
+                const color = typeColors[n.type] || '#64748b';
+                const unread = n.is_read ? '' : 'notif-unread';
+                const time = n.created_at ? new Date(n.created_at).toLocaleString() : '';
+                html += `<div class="notif-card ${unread}" onclick="markRead(${n.id}, this)">
+                <div class="notif-icon" style="background:${color}20;color:${color};"><i class="fas ${icon}"></i></div>
+                <div class="notif-body">
+                    <div class="notif-type"><span class="badge" style="background:${color};color:white;">${n.type}</span></div>
+                    <p class="notif-message">${n.message}</p>
+                    <span class="notif-time">${time}</span>
+                </div>
+                ${!n.is_read ? '<div class="notif-dot"></div>' : ''}
+            </div>`;
+            });
+            list.innerHTML = html;
+        } catch (e) { list.innerHTML = '<p class="text-danger">Error loading notifications</p>'; }
+    }
+
+    async function markRead(id, el) {
+        await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+        el.classList.remove('notif-unread');
+        el.querySelector('.notif-dot')?.remove();
+        updateBellCount();
+    }
+
+    async function markAllRead() {
+        await fetch('/api/notifications/read-all', { method: 'POST' });
+        loadNotifications();
+        updateBellCount();
+        showToast('All marked as read', 'success');
+    }
+
+    async function updateBellCount() {
+        const res = await fetch('/api/notifications/count');
+        const data = await res.json();
+        const badge = document.getElementById('notifBadge');
+        if (badge) { badge.textContent = data.unread_count; badge.style.display = data.unread_count > 0 ? 'flex' : 'none'; }
+    }
+
+    loadNotifications();
+</script>
+{% endblock %}

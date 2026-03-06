@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Add New User – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Add New User</h1>
+    <p>Create a new student, faculty, or admin account.</p>
+</div>
+
+{% if success %}
+<div class="alert alert-success"><i class="fas fa-check-circle"></i><span>{{ success }}</span></div>
+{% endif %}
+{% if error %}
+<div class="alert alert-error"><i class="fas fa-exclamation-triangle"></i><span>{{ error }}</span></div>
+{% endif %}
+
+<div class="card" style="max-width:640px;">
+    <form method="POST" action="/add-user">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="employee_id">Enrollment / ID *</label>
+                <div class="input-group"><i class="fas fa-id-badge input-icon"></i><input type="text" name="employee_id"
+                        id="employee_id" class="form-input" placeholder="STU2024001" required></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="role">Role *</label>
+                <select name="role" id="role" class="form-input" required onchange="toggleFields()">
+                    <option value="Student">Student</option>
+                    <option value="Faculty">Faculty</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Mentor">Mentor</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label" for="first_name">First Name *</label><input type="text"
+                    name="first_name" id="first_name" class="form-input" placeholder="John" required></div>
+            <div class="form-group"><label class="form-label" for="last_name">Last Name *</label><input type="text"
+                    name="last_name" id="last_name" class="form-input" placeholder="Doe" required></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="email">Email *</label>
+            <div class="input-group"><i class="fas fa-envelope input-icon"></i><input type="email" name="email"
+                    id="email" class="form-input" placeholder="john@college.edu" required></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label" for="phone">Phone</label>
+                <div class="input-group"><i class="fas fa-phone input-icon"></i><input type="tel" name="phone"
+                        id="phone" class="form-input" placeholder="+91 9876543210"></div>
+            </div>
+            <div class="form-group"><label class="form-label" for="department">Department</label><input type="text"
+                    name="department" id="department" class="form-input" placeholder="Computer Science"></div>
+        </div>
+        <div class="form-row" id="cohort-row-1">
+            <div class="form-group"><label class="form-label" for="program">Program</label><input type="text"
+                    name="program" id="program" class="form-input" placeholder="B.Tech"></div>
+            <div class="form-group"><label class="form-label" for="major">Major</label><input type="text" name="major"
+                    id="major" class="form-input" placeholder="Computer Science"></div>
+        </div>
+        <div class="form-row" id="cohort-row-2">
+            <div class="form-group"><label class="form-label" for="specialization">Specialization</label><input
+                    type="text" name="specialization" id="specialization" class="form-input" placeholder="AI/ML"></div>
+            <div class="form-group"><label class="form-label" for="section">Section</label><input type="text"
+                    name="section" id="section" class="form-input" placeholder="A"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group" id="semester-col" style="flex: 1;"><label class="form-label"
+                    for="semester">Semester</label><input type="number" name="semester" id="semester" class="form-input"
+                    placeholder="4" min="1" max="8"></div>
+            <div class="form-group" style="flex: 1;"><label class="form-label" for="password">Password *</label>
+                <div class="input-group"><i class="fas fa-lock input-icon"></i><input type="password" name="password"
+                        id="password" class="form-input" placeholder="Min 6 chars" required minlength="6"></div>
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:24px;">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus"></i> Create User</button>
+            <button type="reset" class="btn btn-secondary"><i class="fas fa-eraser"></i> Clear</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleFields() {
+        const role = document.getElementById('role').value;
+        const isStudentOrMentor = (role === 'Student' || role === 'Mentor');
+        document.getElementById('cohort-row-1').style.display = isStudentOrMentor ? 'flex' : 'none';
+        document.getElementById('cohort-row-2').style.display = isStudentOrMentor ? 'flex' : 'none';
+        document.getElementById('semester-col').style.visibility = role === 'Student' ? 'visible' : 'hidden';
+    }
+    // Initialize state on page load
+    document.addEventListener("DOMContentLoaded", toggleFields);
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Mark Attendance – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Mark Attendance</h1>
+    <p>Look directly at the camera to check in or out.</p>
+</div>
+
+<div class="camera-layout">
+    <div class="camera-box">
+        <div class="camera-feed">
+            <video id="camera-video" autoplay muted playsinline></video>
+            <div class="camera-guide"></div>
+            <div class="camera-overlay" id="camera-overlay">
+                <i class="fas fa-video" style="font-size:2rem;"></i>
+                <span>Starting camera...</span>
+            </div>
+        </div>
+        <div class="camera-actions">
+            <button class="btn btn-primary btn-lg" onclick="captureAndRecognize()">
+                <i class="fas fa-camera"></i> Scan Face
+            </button>
+            <button class="btn btn-secondary" onclick="resetAttendance()">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+    </div>
+
+    <div class="result-panel">
+        <h3>Recognition Result</h3>
+        <p class="result-subtitle">System analysis of your scan</p>
+        <div id="recognition-result">
+            <div class="result-placeholder">
+                <i class="fas fa-face-smile"></i>
+                <p>Position your face within the frame and click scan.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

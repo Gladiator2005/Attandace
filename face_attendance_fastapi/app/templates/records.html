@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}My Records – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Records</h1>
+    <p>View and export your attendance history.</p>
+</div>
+
+<div class="filter-bar">
+    <div class="form-group">
+        <label class="form-label">From</label>
+        <input type="date" class="form-input" id="from-date">
+    </div>
+    <div class="form-group">
+        <label class="form-label">To</label>
+        <input type="date" class="form-input" id="to-date">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="loadRecords()"><i class="fas fa-filter"></i> Filter</button>
+    <button class="btn btn-secondary btn-sm" onclick="resetFilters()"><i class="fas fa-times"></i> Reset</button>
+    <div class="filter-spacer"></div>
+    <button class="btn btn-success btn-sm" onclick="exportRecords('excel')"><i class="fas fa-file-excel"></i>
+        Excel</button>
+    <button class="btn btn-danger btn-sm" onclick="exportRecords('pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h3>Attendance Records</h3>
+            <p>Your check-in and check-out history</p>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Type</th>
+                <th>Confidence</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="records-tbody">
+            <tr>
+                <td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);">
+                    <div class="spinner"></div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const ago = new Date(today); ago.setDate(today.getDate() - 30);
+        document.getElementById('to-date').value = today.toISOString().split('T')[0];
+        document.getElementById('from-date').value = ago.toISOString().split('T')[0];
+    });
+    function resetFilters() {
+        document.getElementById('from-date').value = '';
+        document.getElementById('to-date').value = '';
+        loadRecords();
+    }
+</script>
+{% endblock %}

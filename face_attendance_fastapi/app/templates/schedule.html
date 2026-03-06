@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Class Schedule – AntiGrav Access{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📅 Class Schedule</h1>
+        <p class="subtitle">Manage weekly timetable for subjects</p>
+    </div>
+    <button class="btn btn-primary" onclick="document.getElementById('addScheduleModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Add Schedule
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>Weekly Timetable</h3>
+    </div>
+    <div id="scheduleGrid" class="schedule-grid">
+        <div class="schedule-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+    </div>
+</div>
+
+<!-- Add Schedule Modal -->
+<div id="addScheduleModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <h3>Add Class Schedule</h3>
+        <form id="addScheduleForm">
+            <div class="form-row">
+                <div class="form-group"><label>Subject</label>
+                    <select id="schedSubject" required></select>
+                </div>
+                <div class="form-group"><label>Day</label>
+                    <select id="schedDay" required>
+                        <option value="0">Monday</option>
+                        <option value="1">Tuesday</option>
+                        <option value="2">Wednesday</option>
+                        <option value="3">Thursday</option>
+                        <option value="4">Friday</option>
+                        <option value="5">Saturday</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Start Time</label><input type="time" id="schedStart" required></div>
+                <div class="form-group"><label>End Time</label><input type="time" id="schedEnd" required></div>
+            </div>
+            <div class="form-group"><label>Room (optional)</label><input type="text" id="schedRoom"
+                    placeholder="e.g. Room 301"></div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create</button>
+                <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('addScheduleModal').style.display='none'">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    async function loadSchedule() {
+        const grid = document.getElementById('scheduleGrid');
+        try {
+            const res = await fetch('/api/schedule/');
+            const data = await res.json();
+            if (!data.length) { grid.innerHTML = '<p class="empty-state">No schedules yet. Click "Add Schedule" to create the class timetable.</p>'; return; }
+            let html = '<table class="table"><thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Room</th><th>Action</th></tr></thead><tbody>';
+            data.forEach(s => {
+                html += `<tr><td><span class="badge badge-info">${s.day_name}</span></td><td>${s.start_time} – ${s.end_time}</td><td><strong>${s.subject_code}</strong> – ${s.subject_name}</td><td>${s.room || '—'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteSched(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+            html += '</tbody></table>';
+            grid.innerHTML = html;
+        } catch (e) { grid.innerHTML = '<p class="text-danger">Error loading schedules</p>'; }
+    }
+
+    async function loadSubjects() {
+        const sel = document.getElementById('schedSubject');
+        const res = await fetch('/api/subjects/');
+        const data = await res.json();
+        sel.innerHTML = data.map(s => `<option value="${s.id}">${s.code} – ${s.name}</option>`).join('');
+    }
+
+    document.getElementById('addScheduleForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const res = await fetch('/api/schedule/', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject_id: parseInt(document.getElementById('schedSubject').value),
+                day_of_week: parseInt(document.getElementById('schedDay').value),
+                start_time: document.getElementById('schedStart').value,
+                end_time: document.getElementById('schedEnd').value,
+                room: document.getElementById('schedRoom').value || null,
+            })
+        });
+        if (res.ok) {
+            document.getElementById('addScheduleModal').style.display = 'none';
+            document.getElementById('addScheduleForm').reset();
+            loadSchedule();
+            showToast('Schedule created!', 'success');
+        } else { const d = await res.json(); showToast(d.detail || 'Error', 'error'); }
+    };
+
+    async function deleteSched(id) {
+        if (!confirm('Delete this schedule?')) return;
+        await fetch(`/api/schedule/${id}`, { method: 'DELETE' });
+        loadSchedule();
+        showToast('Deleted', 'success');
+    }
+
+    loadSchedule();
+    loadSubjects();
+</script>
+{% endblock %}

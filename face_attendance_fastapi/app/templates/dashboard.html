@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-actions">
+        <div>
+            <h1>Welcome back, {{ user.first_name }}!</h1>
+            <p>
+                {% if user.role.value == 'Student' %}Here is your attendance summary and threshold status.
+                {% elif user.role.value == 'Faculty' %}Manage your subjects and student attendance.
+                {% else %}System overview and management.{% endif %}
+            </p>
+        </div>
+        {% if user.role.value != 'Student' %}
+        <a href="/mark-subject-attendance" class="btn btn-primary"><i class="fas fa-clipboard-check"></i> Mark
+            Attendance</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if user.role.value == 'Student' %}
+<!-- Student Threshold Overview -->
+<div class="stats-grid" id="threshold-cards">
+    <div class="stat-card" style="text-align:center;padding:40px;grid-column:1/-1;">
+        <div class="spinner"></div>
+        <p style="color:var(--text-muted);margin-top:8px;">Loading attendance data...</p>
+    </div>
+</div>
+
+<div class="table-card" style="margin-top:24px;">
+    <div class="table-card-header">
+        <div>
+            <h3><i class="fas fa-chart-pie"></i> Subject-wise Attendance</h3>
+            <p>Track how close you are to the 75% threshold.</p>
+        </div>
+        <a href="/threshold" class="btn btn-secondary btn-sm">Detailed View</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Attended</th>
+                <th>Conducted</th>
+                <th>Percentage</th>
+                <th>Status</th>
+                <th>Action Needed</th>
+            </tr>
+        </thead>
+        <tbody id="threshold-tbody">
+            <tr>
+                <td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">
+                    <div class="spinner"></div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if user.role.value == 'Faculty' %}
+<!-- Faculty Dashboard -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header"><span>My Subjects</span>
+            <div class="stat-icon blue"><i class="fas fa-book"></i></div>
+        </div>
+        <div class="stat-value" id="fac-subjects">–</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Students Below 75%</span>
+            <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+        </div>
+        <div class="stat-value" id="fac-below">–</div>
+    </div>
+</div>
+<div class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h3>Students Below Threshold</h3>
+            <p>Students with attendance below 75% in your subjects</p>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Enrollment</th>
+                <th>Subject</th>
+                <th>Attended</th>
+                <th>Conducted</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody id="fac-below-tbody">
+            <tr>
+                <td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">
+                    <div class="spinner"></div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if user.role.value == 'Admin' %}
+<!-- Admin Dashboard -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Total Students</span>
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+        </div>
+        <div class="stat-value" id="admin-total">–</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Total Faculty</span>
+            <div class="stat-icon green"><i class="fas fa-chalkboard-teacher"></i></div>
+        </div>
+        <div class="stat-value" id="admin-faculty">–</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Subjects</span>
+            <div class="stat-icon amber"><i class="fas fa-book-open"></i></div>
+        </div>
+        <div class="stat-value" id="admin-subjects">–</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Below Threshold</span>
+            <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+        </div>
+        <div class="stat-value" id="admin-below">–</div>
+    </div>
+</div>
+<div style="display:flex;gap:12px;margin-bottom:24px;">
+    <a href="/add-user" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i> Add User</a>
+    <a href="/subjects" class="btn btn-secondary btn-sm"><i class="fas fa-book-open"></i> Manage Subjects</a>
+    <a href="/threshold" class="btn btn-secondary btn-sm"><i class="fas fa-chart-pie"></i> Threshold Reports</a>
+</div>
+{% endif %}
+{% endblock %}

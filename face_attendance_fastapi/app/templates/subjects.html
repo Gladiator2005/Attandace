@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Subjects – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-actions">
+        <div>
+            <h1>{% if user.role.value == 'Student' %}My Subjects{% elif user.role.value == 'Faculty' %}My Subjects{%
+                else %}Manage Subjects{% endif %}</h1>
+            <p>{% if user.role.value == 'Admin' %}Create, edit, and manage course subjects.{% else %}View your
+                enrolled/assigned subjects.{% endif %}</p>
+        </div>
+        {% if user.role.value == 'Admin' %}
+        <button class="btn btn-primary" onclick="showAddSubjectModal()"><i class="fas fa-plus"></i> Add Subject</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Subject Form (Admin only) -->
+{% if user.role.value == 'Admin' %}
+<div class="card" id="add-subject-form" style="display:none;margin-bottom:24px;">
+    <h3 style="margin-bottom:16px;"><i class="fas fa-book-open"></i> New Subject</h3>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Code *</label><input type="text" class="form-input"
+                id="sub-code" placeholder="CS101"></div>
+        <div class="form-group"><label class="form-label">Name *</label><input type="text" class="form-input"
+                id="sub-name" placeholder="Data Structures"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Department</label><input type="text" class="form-input"
+                id="sub-dept" placeholder="Computer Science"></div>
+        <div class="form-group"><label class="form-label">Semester</label><input type="number" class="form-input"
+                id="sub-sem" placeholder="4" min="1" max="8"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Total Classes</label><input type="number" class="form-input"
+                id="sub-total" value="40" min="1"></div>
+        <div class="form-group"><label class="form-label">Faculty</label><select class="form-input" id="sub-faculty">
+                <option value="">Select Faculty</option>
+            </select></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:16px;">
+        <button class="btn btn-primary" onclick="createSubject()"><i class="fas fa-check"></i> Create</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('add-subject-form').style.display='none'"><i
+                class="fas fa-times"></i> Cancel</button>
+    </div>
+</div>
+
+<!-- Enroll Students Modal -->
+<div class="card" id="enroll-form" style="display:none;margin-bottom:24px;">
+    <h3 style="margin-bottom:16px;"><i class="fas fa-user-plus"></i> Enroll Students in <span
+            id="enroll-subject-name"></span></h3>
+    <div id="student-checkboxes"
+        style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+    </div>
+    <div style="display:flex;gap:12px;margin-top:16px;">
+        <button class="btn btn-primary" onclick="submitEnrollment()"><i class="fas fa-check"></i> Enroll
+            Selected</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('enroll-form').style.display='none'"><i
+                class="fas fa-times"></i> Cancel</button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Subjects List -->
+<div class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h3>Subjects</h3>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Sem</th>
+                <th>Faculty</th>
+                <th>Enrolled</th>
+                {% if user.role.value == 'Admin' %}<th>Actions</th>{% endif %}
+                {% if user.role.value == 'Student' %}<th>Attendance</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody id="subjects-tbody">
+            <tr>
+                <td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">
+                    <div class="spinner"></div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

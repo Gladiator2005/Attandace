@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-actions">
+        <div>
+            <h1>Admin Dashboard</h1>
+            <p>Overview of your organization's attendance.</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <a href="/add-user" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i> Add User</a>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminStats()"><i class="fas fa-sync"></i>
+                Refresh</button>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Total Employees</span>
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+        </div>
+        <div class="stat-value" id="admin-total">–</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Present Today</span>
+            <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+        </div>
+        <div class="stat-value" id="admin-present">–</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Absent Today</span>
+            <div class="stat-icon red"><i class="fas fa-user-xmark"></i></div>
+        </div>
+        <div class="stat-value" id="admin-absent">–</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><span>Attendance Rate</span>
+            <div class="stat-icon blue"><i class="fas fa-percentage"></i></div>
+        </div>
+        <div class="stat-value" id="admin-rate">–</div>
+        <div class="stat-progress">
+            <div class="stat-progress-bar" id="admin-rate-bar" style="width:0%"></div>
+        </div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h3>Department Statistics</h3>
+            <p>Breakdown by department</p>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Department</th>
+                <th>Total Employees</th>
+                <th>Present Today</th>
+                <th>Attendance Rate</th>
+            </tr>
+        </thead>
+        <tbody id="dept-tbody">
+            <tr>
+                <td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted);">
+                    <div class="spinner"></div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

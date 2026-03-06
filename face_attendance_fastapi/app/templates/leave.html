@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Leave Management – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Leave Management</h1>
+    <p>{% if user.role.value == 'Student' %}Apply for leave and track your requests{% else %}Review and manage student
+        leave requests{% endif %}</p>
+</div>
+
+{% if user.role.value == 'Student' %}
+<!-- Student: Apply for Leave -->
+<div class="card" style="max-width:700px;margin-bottom:24px;">
+    <h3><i class="fas fa-plus-circle"></i> Apply for Leave</h3>
+    <div class="form-row" style="margin-top:16px;">
+        <div class="form-group">
+            <label class="form-label">Subject *</label>
+            <select class="form-input" id="leave-subject">
+                <option value="">Select Subject</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Date *</label>
+            <input type="date" class="form-input" id="leave-date">
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label">Leave Type *</label>
+            <select class="form-input" id="leave-type">
+                <option value="Medical">🏥 Medical</option>
+                <option value="Personal" selected>📝 Personal</option>
+                <option value="On Duty">🎓 On Duty (OD)</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Reason *</label>
+        <textarea class="form-input" id="leave-reason" rows="3" placeholder="Explain your reason..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="submitLeave()" style="margin-top:12px;">
+        <i class="fas fa-paper-plane"></i> Submit Leave Request
+    </button>
+</div>
+
+<!-- Student: My Leave Requests -->
+<div class="card" style="max-width:700px;">
+    <h3><i class="fas fa-history"></i> My Leave Requests</h3>
+    <div id="my-leaves-list" style="margin-top:16px;">
+        <p style="text-align:center;color:var(--text-muted);">Loading...</p>
+    </div>
+</div>
+
+{% else %}
+<!-- Faculty/Admin: Pending Requests -->
+<div class="card">
+    <h3><i class="fas fa-clock"></i> Pending Leave Requests</h3>
+    <div id="pending-leaves-list" style="margin-top:16px;">
+        <p style="text-align:center;color:var(--text-muted);">Loading...</p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    async function apiJson(url, opts = {}) {
+        const res = await fetch(url, {
+            credentials: 'same-origin', ...opts,
+            headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Request failed');
+        return data;
+    }
+
+    function showToast(msg, type = 'info') {
+        const c = document.getElementById('toast-container');
+        if (!c) return;
+        const t = document.createElement('div');
+        t.className = `toast toast-${type}`;
+        t.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i><span>${msg}</span>`;
+        c.appendChild(t);
+        setTimeout(() => t.classList.add('show'), 10);
+        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 4000);
+    }
+
+    {% if user.role.value == 'Student' %}
+    // Load student's enrolled subjects
+    async function loadLeaveSubjects() {
+        try {
+            const data = await apiJson('/api/subjects/my-subjects');
+            const sel = document.getElementById('leave-subject');
+            data.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.code} – ${s.name}`;
+                sel.appendChild(opt);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    async function submitLeave() {
+        const subjectId = document.getElementById('leave-subject').value;
+        const leaveDate = document.getElementById('leave-date').value;
+        const leaveType = document.getElementById('leave-type').value;
+        const reason = document.getElementById('leave-reason').value.trim();
+        if (!subjectId || !leaveDate || !reason) {
+            showToast('All fields are required', 'error'); return;
+        }
+        try {
+            await apiJson('/api/leave/', {
+                method: 'POST',
+                body: JSON.stringify({ subject_id: parseInt(subjectId), leave_date: leaveDate, leave_type: leaveType, reason })
+            });
+            showToast('Leave request submitted!', 'success');
+            document.getElementById('leave-reason').value = '';
+            loadMyLeaves();
+        } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function loadMyLeaves() {
+        try {
+            const leaves = await apiJson('/api/leave/my-requests');
+            const container = document.getElementById('my-leaves-list');
+            if (!leaves.length) {
+                container.innerHTML = '<p style="text-align:center;color:var(--text-muted);">No leave requests yet.</p>';
+                return;
+            }
+            container.innerHTML = leaves.map(l => `
+            <div class="notif-card ${l.status === 'Pending' ? 'unread' : ''}" style="margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <span class="notif-type ${l.status === 'Approved' ? 'success' : l.status === 'Rejected' ? 'danger' : 'warning'}">${l.status}</span>
+                        <strong>${l.subject_code}</strong> – ${l.leave_type}
+                    </div>
+                    <span style="color:var(--text-muted);font-size:13px;">${l.leave_date}</span>
+                </div>
+                <p style="margin:4px 0 0;color:var(--text-secondary);font-size:14px;">${l.reason}</p>
+            </div>
+        `).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { loadLeaveSubjects(); loadMyLeaves(); });
+
+    {% else %}
+    // Faculty/Admin: Load pending leaves
+    async function loadPendingLeaves() {
+        try {
+            const leaves = await apiJson('/api/leave/pending');
+            const container = document.getElementById('pending-leaves-list');
+            if (!leaves.length) {
+                container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-check-circle" style="font-size:48px;color:var(--success);"></i><p style="margin-top:12px;color:var(--text-muted);">No pending leave requests</p></div>';
+                return;
+            }
+            container.innerHTML = `
+            <table>
+                <thead><tr><th>Student</th><th>Subject</th><th>Date</th><th>Type</th><th>Reason</th><th>Action</th></tr></thead>
+                <tbody>${leaves.map(l => `
+                    <tr>
+                        <td><strong>${l.student_name}</strong><br><small>${l.enrollment_no}</small></td>
+                        <td>${l.subject_code}</td>
+                        <td>${l.leave_date}</td>
+                        <td><span class="notif-type warning">${l.leave_type}</span></td>
+                        <td style="max-width:200px;">${l.reason}</td>
+                        <td>
+                            <div style="display:flex;gap:6px;">
+                                <button class="btn btn-success btn-sm" onclick="handleLeave(${l.id},'approve')"><i class="fas fa-check"></i></button>
+                                <button class="btn btn-danger btn-sm" onclick="handleLeave(${l.id},'reject')"><i class="fas fa-times"></i></button>
+                            </div>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+        } catch (e) { console.error(e); }
+    }
+
+    async function handleLeave(id, action) {
+        try {
+            const data = await apiJson(`/api/leave/${id}/${action}`, { method: 'POST' });
+            showToast(data.message, 'success');
+            loadPendingLeaves();
+        } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { loadPendingLeaves(); });
+    {% endif %}
+</script>
+{% endblock %}

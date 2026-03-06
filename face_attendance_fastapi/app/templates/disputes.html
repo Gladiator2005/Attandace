@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Disputes – AntiGrav Access{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>⚖️ Disputed Records</h1>
+        <p class="subtitle">Resolve attendance mismatches between face scan and faculty records</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>Disputed Attendance Records</h3>
+    </div>
+    <div id="disputeList">
+        <div class="schedule-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+    </div>
+</div>
+
+<script>
+    async function loadDisputes() {
+        const el = document.getElementById('disputeList');
+        try {
+            {% if user.role.value == 'Mentor' %}
+            const res = await fetch('/api/mentor/disputes');
+            {% else %}
+            const res = await fetch('/api/subjects/disputed/all');
+            {% endif %}
+            const data = await res.json();
+            if (!data.length) {
+                el.innerHTML = '<div class="empty-state" style="padding:40px;text-align:center;"><i class="fas fa-check-circle" style="font-size:48px;color:#10b981;opacity:0.5;display:block;margin-bottom:12px;"></i><p>No disputed records</p></div>';
+                return;
+            }
+            let html = '<table class="table"><thead><tr><th>Student</th><th>Subject</th><th>Date</th><th>Face Scan</th><th>Faculty Roll</th><th>Status</th>';
+            {% if user.role.value == 'Admin' or user.role.value == 'Mentor' %}
+            html += '<th>Action</th>';
+            {% endif %}
+            html += '</tr></thead><tbody>';
+            data.forEach(r => {
+                const face = r.face_verified ? '<span class="badge badge-success"><i class="fas fa-check"></i> Yes</span>' : '<span class="badge badge-danger"><i class="fas fa-times"></i> No</span>';
+                const faculty = r.faculty_marked ? '<span class="badge badge-success"><i class="fas fa-check"></i> Yes</span>' : '<span class="badge badge-danger"><i class="fas fa-times"></i> No</span>';
+                html += `<tr>
+                <td><strong>${r.student_name}</strong><br><small>${r.enrollment_no}</small></td>
+                <td>${r.subject_code} – ${r.subject_name}</td>
+                <td>${r.date}</td>
+                <td>${face}</td>
+                <td>${faculty}</td>
+                <td><span class="badge badge-warning">${r.final_status}</span></td>`;
+                {% if user.role.value == 'Admin' or user.role.value == 'Mentor' %}
+                html += `<td>
+                <button class="btn btn-sm btn-success" onclick="resolve(${r.id},'Present')" title="Mark Present"><i class="fas fa-check"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="resolve(${r.id},'Absent')" title="Mark Absent" style="margin-left:4px;"><i class="fas fa-times"></i></button>
+            </td>`;
+                {% endif %}
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        } catch (e) { el.innerHTML = '<p class="text-danger">Error loading disputes</p>'; }
+    }
+
+    async function resolve(id, status) {
+        if (!confirm(`Mark this record as ${status}?`)) return;
+        const res = await fetch(`/api/subjects/attendance/${id}/resolve`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ final_status: status }),
+        });
+        if (res.ok) {
+            showToast(`Resolved as ${status}`, 'success');
+            loadDisputes();
+        } else {
+            const d = await res.json();
+            showToast(d.detail || 'Error', 'error');
+        }
+    }
+
+    loadDisputes();
+</script>
+{% endblock %}

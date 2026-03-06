@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Attendance Tracker – AntiGrav Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-actions">
+        <div>
+            <h1>{% if user.role.value == 'Student' %}Attendance Tracker{% else %}Threshold Reports{% endif %}</h1>
+            <p>{% if user.role.value == 'Student' %}Track your attendance against the 75% minimum requirement.{% else
+                %}View students below or above the 75% threshold.{% endif %}</p>
+        </div>
+        {% if user.role.value != 'Student' %}
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm active" id="filter-all"
+                onclick="filterThreshold('all')">All</button>
+            <button class="btn btn-danger btn-sm" id="filter-below" onclick="filterThreshold('below')">Below
+                75%</button>
+            <button class="btn btn-success btn-sm" id="filter-above" onclick="filterThreshold('above')">Above
+                75%</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if user.role.value == 'Student' %}
+<!-- Student View: Per-subject cards -->
+<div id="student-threshold-cards">
+    <div style="text-align:center;padding:40px;">
+        <div class="spinner"></div>
+        <p style="color:var(--text-muted);">Loading...</p>
+    </div>
+</div>
+{% else %}
+<!-- Faculty/Admin View: Table of all students  -->
+<div class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h3>Student Attendance Overview</h3>
+            <p>Minimum requirement: 75%</p>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Enrollment</th>
+                <th>Subject</th>
+                <th>Attended</th>
+                <th>Conducted</th>
+                <th>%</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="threshold-report-tbody">
+            <tr>
+                <td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">
+                    <div class="spinner"></div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
