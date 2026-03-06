@@ -119,7 +119,34 @@ Access the application:
 - **Documentation**: http://localhost:8000/docs (Swagger UI)
 - **Alternative Docs**: http://localhost:8000/redoc
 
-#### Production Server
+#### Production Deployment
+
+**📖 See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment guide covering:**
+- Docker & Docker Compose production setup
+- Cloud platforms (AWS, GCP, Azure, DigitalOcean)
+- Database migration to PostgreSQL
+- SSL/HTTPS configuration
+- CI/CD automation with GitHub Actions
+- Monitoring, logging, and security checklist
+
+**Quick Docker Deployment:**
+
+```bash
+# 1. Create production environment file
+cp .env.example .env.production
+# Edit .env.production with your settings
+
+# 2. Build and run with Docker Compose
+docker-compose -f docker-compose.prod.yml up -d
+
+# 3. Apply database migrations
+docker-compose exec api alembic upgrade head
+
+# 4. Create admin user
+docker-compose exec api python scripts/db_manager.py seed
+```
+
+**Local Development:**
 
 ```bash
 # Using Gunicorn with Uvicorn workers
@@ -127,17 +154,6 @@ gunicorn app.main:app \
   --workers 4 \
   --worker-class uvicorn.workers.UvicornWorker \
   --bind 0.0.0.0:8000
-```
-
-#### Docker Deployment
-
-```bash
-# Build and run with Docker Compose
-docker-compose up --build
-
-# Or using Docker directly
-docker build -t attendance-api .
-docker run -p 8000:8000 attendance-api
 ```
 
 ### Running Tests
