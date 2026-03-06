@@ -147,7 +147,7 @@ docker run -p 8000:8000 attendance-api
 unset PYTHONPATH && PYTHONNOUSERSITE=1 python -m pytest
 
 # Run with coverage
-unset PYTHONPATH && PYTHONNOUSERSITE=1 python -m pytest --cov=app
+unset PYTHONPATH && PYTHONNOUSERSITE=1 python -m pytest --cov=app --cov-report=html
 
 # Run specific test file
 unset PYTHONPATH && PYTHONNOUSERSITE=1 python -m pytest tests/test_auth.py
@@ -158,12 +158,69 @@ unset PYTHONPATH && PYTHONNOUSERSITE=1 python -m pytest -v
 # Note: PYTHONNOUSERSITE=1 prevents ROS pytest plugin conflicts on systems with ROS installed
 ```
 
-**Test Coverage**: 17/25 tests passing (core functionality validated)
+**Test Coverage**: 25/25 tests passing (100% core functionality)
 - ✅ Authentication flow
 - ✅ Protected endpoints
 - ✅ Subject listing
 - ✅ Dispute resolution (admin/mentor workflows)
-- ⚠️ Some endpoint tests need API route adjustments
+- ✅ Attendance marking and retrieval
+- ✅ Export functionality
+
+### Database Migrations
+
+```bash
+# Apply all migrations
+alembic upgrade head
+
+# Create new migration after model changes
+alembic revision --autogenerate -m "description"
+
+# Rollback last migration
+alembic downgrade -1
+
+# View migration history
+alembic history
+
+# Seed test data
+python scripts/db_manager.py seed
+
+# Reset database (development only)
+python scripts/db_manager.py reset
+```
+
+See [migrations/README.md](migrations/README.md) for detailed migration documentation.
+
+### Code Quality
+
+```bash
+# Install pre-commit hooks
+pip install pre-commit
+pre-commit install
+
+# Run pre-commit on all files
+pre-commit run --all-files
+
+# Run specific checks
+black app/ tests/
+isort app/ tests/
+flake8 app/
+bandit -r app/
+
+# Security checks
+safety check
+```
+
+### Continuous Integration
+
+GitHub Actions workflows automatically:
+- ✅ Run tests on every push/PR
+- ✅ Check code formatting (black, isort, flake8)
+- ✅ Build and push Docker images
+- ✅ Run security scans (bandit, safety, trivy)
+- ✅ Validate database migrations
+- ✅ Generate coverage reports
+
+See [.github/workflows/](.github/workflows/) for CI/CD configuration.
 
 ## API Quick Reference
 
@@ -296,6 +353,31 @@ CELERY_BROKER_URL=
 
 ## Common Development Tasks
 
+### Database Management
+
+#### Create and Apply Migrations
+```bash
+# After modifying models in app/models/
+alembic revision --autogenerate -m "add_new_field"
+
+# Review the generated migration file
+cat migrations/versions/latest_migration.py
+
+# Apply the migration
+alembic upgrade head
+```
+
+#### Seed Database with Test Data
+```bash
+# Seed users, subjects, enrollments, and attendance
+python scripts/db_manager.py seed
+
+# Reset database and reseed (development only)
+python scripts/db_manager.py reset
+alembic upgrade head
+python scripts/db_manager.py seed
+```
+
 ### Create a new user (Admin)
 
 ```bash
@@ -314,25 +396,42 @@ curl -X POST "http://localhost:8000/api/users/" \
   }'
 ```
 
-### Run database migrations
+### Git Workflow with Pre-commit Hooks
 
 ```bash
-# Create a new migration
-alembic revision --autogenerate -m "Description of changes"
+# Install pre-commit hooks (one time)
+pre-commit install
 
-# Apply migrations
-alembic upgrade head
+# Install pre-push test hook
+ln -s ../../.githooks/pre-push .git/hooks/pre-push
 
-# Rollback last migration
-alembic downgrade -1
+# Now commits automatically run:
+# - Code formatting (black, isort)
+# - Linting (flake8)
+# - Security checks (bandit)
+
+# Push automatically runs tests
+git push  # Tests run before push
 ```
 
-### Clear rate limit cache (for testing)
+### Local Development Cycle
 
-```python
-# In Python REPL
-from app.middleware.rate_limit import _request_log
-_request_log.clear()
+```bash
+# 1. Make code changes
+vim app/api/routes/my_route.py
+
+# 2. Run tests
+pytest tests/test_my_feature.py -v
+
+# 3. Check code quality
+black app/ tests/
+flake8 app/
+
+# 4. Commit (pre-commit hooks run automatically)
+git commit -m "feat: add new feature"
+
+# 5. Push (tests run automatically)
+git push
 ```
 
 ## Troubleshooting
