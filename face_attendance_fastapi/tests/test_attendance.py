@@ -19,12 +19,11 @@ class TestAttendanceMarking:
     ):
         """Test faculty can mark attendance for their subject."""
         response = await client.post(
-            "/api/subjects/mark-attendance",
+            f"/api/subjects/{test_subject.id}/attendance",
             headers={"Authorization": f"Bearer {faculty_token}"},
             json={
-                "subject_id": test_subject.id,
                 "date": str(date.today()),
-                "attendance_records": [
+                "entries": [
                     {
                         "student_id": student_user.id,
                         "status": "Present"
@@ -34,7 +33,7 @@ class TestAttendanceMarking:
         )
         assert response.status_code == 200
         data = response.json()
-        assert "marked" in data or "success" in data.get("message", "").lower()
+        assert "marked" in data.get("message", "").lower() or "success" in data.get("message", "").lower()
 
     async def test_get_subject_attendance(
         self,
@@ -60,12 +59,11 @@ class TestAttendanceMarking:
     ):
         """Test students cannot manually mark attendance."""
         response = await client.post(
-            "/api/subjects/mark-attendance",
+            f"/api/subjects/{test_subject.id}/attendance",
             headers={"Authorization": f"Bearer {student_token}"},
             json={
-                "subject_id": test_subject.id,
                 "date": str(date.today()),
-                "attendance_records": [
+                "entries": [
                     {
                         "student_id": student_user.id,
                         "status": "Present"
@@ -73,8 +71,8 @@ class TestAttendanceMarking:
                 ]
             }
         )
-        # Should be 403 Forbidden or similar
-        assert response.status_code in [403, 401]
+        # Should be 403 Forbidden
+        assert response.status_code == 403
 
     async def test_get_student_own_attendance(
         self,
