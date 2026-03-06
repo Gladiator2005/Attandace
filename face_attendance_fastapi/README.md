@@ -121,21 +121,16 @@ Access the application:
 
 #### Production Deployment
 
-**📖 Comprehensive Deployment Guides:**
+**📖 See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide:**
+- FREE hosting platforms (Render, Fly.io, Railway, Oracle Cloud)
+- Zero-cost deployment in 5 minutes
+- PostgreSQL database setup
+- SSL/HTTPS automatic configuration
+- Email notifications setup
+- Keep-alive strategies
+- Troubleshooting guide
 
-- **[DEPLOYMENT_FREE.md](DEPLOYMENT_FREE.md)** - FREE hosting options (Render, Fly.io, Railway, Oracle Cloud)
-  - Zero-cost deployment in 5 minutes
-  - Step-by-step for Render.com (easiest)
-  - Fly.io Docker deployment
-  - Always-free tier comparisons
-  
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Full production guide (AWS, GCP, Azure, DigitalOcean)
-  - Cloud platforms with auto-scaling
-  - Database migration to PostgreSQL
-  - SSL/HTTPS configuration
-  - Monitoring, logging, security checklist
-
-**Quick Start - FREE Deployment (Render.com):**
+**Quick Start - FREE Deployment (5 minutes):**
 
 ```bash
 # 1. Push your code to GitHub
