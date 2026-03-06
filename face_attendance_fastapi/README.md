@@ -121,32 +121,47 @@ Access the application:
 
 #### Production Deployment
 
-**📖 See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment guide covering:**
-- Docker & Docker Compose production setup
-- Cloud platforms (AWS, GCP, Azure, DigitalOcean)
-- Database migration to PostgreSQL
-- SSL/HTTPS configuration
-- CI/CD automation with GitHub Actions
-- Monitoring, logging, and security checklist
+**📖 Comprehensive Deployment Guides:**
 
-**Quick Docker Deployment:**
+- **[DEPLOYMENT_FREE.md](DEPLOYMENT_FREE.md)** - FREE hosting options (Render, Fly.io, Railway, Oracle Cloud)
+  - Zero-cost deployment in 5 minutes
+  - Step-by-step for Render.com (easiest)
+  - Fly.io Docker deployment
+  - Always-free tier comparisons
+  
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Full production guide (AWS, GCP, Azure, DigitalOcean)
+  - Cloud platforms with auto-scaling
+  - Database migration to PostgreSQL
+  - SSL/HTTPS configuration
+  - Monitoring, logging, security checklist
+
+**Quick Start - FREE Deployment (Render.com):**
 
 ```bash
-# 1. Create production environment file
-cp .env.example .env.production
-# Edit .env.production with your settings
+# 1. Push your code to GitHub
+git add . && git commit -m "Ready for deployment" && git push
 
-# 2. Build and run with Docker Compose
-docker-compose -f docker-compose.prod.yml up -d
+# 2. Sign up at https://render.com (free, use GitHub)
 
-# 3. Apply database migrations
-docker-compose exec api alembic upgrade head
+# 3. Create new Blueprint, select your repo
+# (render.yaml is already configured!)
 
-# 4. Create admin user
-docker-compose exec api python scripts/db_manager.py seed
+# 4. Wait 5 minutes - your app is live! ✨
+https://your-app.onrender.com/api/health
 ```
 
-**Local Development:**
+**Alternative - FREE Docker Deployment (Fly.io):**
+
+```bash
+# Install Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# Deploy in 2 commands
+flyctl launch  # Configure app
+flyctl deploy  # Deploy!
+```
+
+**Local Production Testing:**
 
 ```bash
 # Using Gunicorn with Uvicorn workers
