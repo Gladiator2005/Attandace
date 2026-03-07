@@ -1,3 +1,0 @@
-[build]
-builder = "DOCKER"
-dockerfilePath = "face_attendance_fastapi/Dockerfile"
