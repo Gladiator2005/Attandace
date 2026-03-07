@@ -16,7 +16,8 @@ COPY requirements.txt .
 
 # Install Python dependencies
 ENV MAX_JOBS=1
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir cmake && \
+    pip install --no-cache-dir -r requirements.txt --global-option=build_ext --global-option="-j 1"
 
 # Copy application
 COPY app/ ./app/
