@@ -4,9 +4,9 @@ region: nyc
 services:
   - name: api
     github:
-      branch: main
+      branch: master
       deploy_on_push: true
-      repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
+      repo: Gladiator2005/Attandace
     dockerfile_path: face_attendance_fastapi/Dockerfile
     
     # Basic tier ($5/month but you have $200 credit!)
@@ -53,9 +53,9 @@ jobs:
   - name: migrate
     kind: PRE_DEPLOY
     github:
-      branch: main
+      branch: master
       deploy_on_push: true
-      repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
+      repo: Gladiator2005/Attandace
     dockerfile_path: face_attendance_fastapi/Dockerfile
     instance_count: 1
     instance_size_slug: basic-xxs
